@@ -1,82 +1,50 @@
-name: CI Pipeline
+name: CI Pipeline - Docker Hub Deployment
 
 on:
+  push:
+    branches:
+    - main
+    - develop
+    - peter_branch
   pull_request:
-    branches: [ main, develop ]
+    branches:
+    - main
+    - develop
+    - peter_branch
 
 jobs:
-  terraform-validate:
-    name: Terraform Validation
+  docker-build-push:
+    name: Build & Push Docker Image to Docker Hub
     runs-on: ubuntu-latest
-    
+
+    env:
+
+      DOCKER_USERNAME: peterukpabi4
+      DOCKER_PASSWORD: Newday12345@
+
     steps:
+    # Step 1: Checkout the code
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_version: 1.2.0
+    # Step 2: Set up Docker Buildx
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
 
-    - name: Terraform Init
-      run: |
-        cd terraform
-        terraform init -backend=false
-      
-    - name: Terraform Validate
-      run: |
-        cd terraform
-        terraform validate
-
-    - name: Terraform Format Check
-      run: |
-        cd terraform
-        terraform fmt -check -recursive
-
-  code-quality:
-    name: Code Quality Checks
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
+    # Step 3: Log in to Docker Hub
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
       with:
-        node-version: '16'
-        
-    - name: Install dependencies
-      run: |
-        cd src
-        npm ci
-        
-    - name: ESLint
-      run: |
-        cd src
-        npm run lint
-        
-    - name: Run tests
-      run: |
-        cd src
-        npm test
+        username: ${{ env.DOCKER_USERNAME }}
+        password: ${{ env.DOCKER_PASSWORD }}
 
-  security-scan:
-    name: Security Scanning
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-      
-    - name: Run tfsec
-      uses: aquasecurity/tfsec-action@v1.0.0
-      with:
-        working_directory: terraform
-        
-    - name: Run OWASP ZAP Baseline Scan
-      uses: zaproxy/action-baseline@v0.7.0
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        target: https://dev.smartsphere.example.com
-        fail_action: false
+    # Step 4: Build the Docker image
+    - name: Build Docker image
+      run: |
+        docker build -t ${{ env.DOCKER_USERNAME }}/SmartSphere:${{ github.sha }} .
+
+    # Step 5: Push Docker image to Docker Hub
+    - name: Push Docker image
+      run: |
+        docker push ${{ env.DOCKER_USERNAME }}/SmartSphere:${{ github.sha }}
+
