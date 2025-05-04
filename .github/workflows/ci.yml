@@ -41,10 +41,10 @@ jobs:
     # Step 4: Build the Docker image
     - name: Build Docker image
       run: |
-        docker build -t ${{ env.DOCKER_USERNAME }}/SmartSphere:${{ github.sha }} .
+        docker build -t ${{ env.DOCKER_USERNAME }}/smartsphere:${{ github.sha }} .
 
     # Step 5: Push Docker image to Docker Hub
     - name: Push Docker image
       run: |
-        docker push ${{ env.DOCKER_USERNAME }}/SmartSphere:${{ github.sha }}
+        docker push ${{ env.DOCKER_USERNAME }}/smartsphere:${{ github.sha }}
 
